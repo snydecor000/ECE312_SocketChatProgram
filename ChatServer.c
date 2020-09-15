@@ -13,11 +13,13 @@ void error(char *msg) {
 }
 
 int main(int argc, char *argv[]) {
-    int sockfd, newsockfd, clilen;
-    int portno = 0;
+    int sockfd, newsockfd, portno, clilen;
     char buffer[BUFFER_LEN];
     struct sockaddr_in serv_addr, cli_addr;
     int n;
+
+    portno = 0;
+    clilen = sizeof(cli_addr);
 
     while(portno == 0) {
         printf("Enter a port # to listen to: ");
@@ -50,8 +52,9 @@ int main(int argc, char *argv[]) {
     }
 
     listen(sockfd,5);
-    clilen = sizeof(cli_addr);
+    
     newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+    
     if (newsockfd < 0) {
         error("ERROR on accept");
     }
