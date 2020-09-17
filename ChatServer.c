@@ -5,7 +5,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-#define BUFFER_LEN 256 //Defines how long a message can be
+#define BUFFER_LEN 256  //Defines how long a message can be
+#define USER_LEN 100     //Defines how long a username can be
 
 void error(char *msg) {
     perror(msg);
@@ -15,6 +16,7 @@ void error(char *msg) {
 int main(int argc, char *argv[]) {
     int sockfd, newsockfd, portno, clilen;
     char buffer[BUFFER_LEN];
+    char username[USER_LEN];
     struct sockaddr_in serv_addr, cli_addr;
     int n;
 
@@ -29,8 +31,16 @@ int main(int argc, char *argv[]) {
         if(portno < 2000 || portno > 65535) {
             portno = 0;
             printf("Please enter a valid port # from 2000 to 65535\n");
+            fflush( stdout );
         }
     }
+
+    printf("Please enter a username: ");
+    fflush( stdout );
+    bzero(username, USER_LEN);
+    fgets(username, USER_LEN-1, stdin);
+    printf("Waiting for connection...\n");
+    fflush( stdout );
 
     //Attempt to open the socket
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -46,23 +56,30 @@ int main(int argc, char *argv[]) {
     serv_addr.sin_port = htons(portno);
     serv_addr.sin_addr.s_addr = INADDR_ANY;
 
-    //Attempt to bind with the socket
+    //Attempt to bind with the socket, wait here until it does connect
     if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
         error("ERROR on binding");
     }
+    
+    listen(sockfd,1);
 
-    listen(sockfd,5);
-    
-    newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
-    
+    newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);//The code waits for this to happen
+
     if (newsockfd < 0) {
         error("ERROR on accept");
     }
     bzero(buffer,BUFFER_LEN);//Clear Buffer
-    n = read(newsockfd,buffer,BUFFER_LEN-1);//Fill Buffer with the message
-    if (n < 0) error("ERROR reading from socket");
+    n = read(newsockfd,buffer,BUFFER_LEN-1);//The code waits for this.  Fill Buffer with the message
+    
+    if (n < 0) {
+        error("ERROR reading from socket");
+    }
+        
+    
     printf("Here is the message: %s\n",buffer);
     n = write(newsockfd,"I got your message",18);
-    if (n < 0) error("ERROR writing to socket");
+
+    if (n < 0) 
+        error("ERROR writing to socket");
     return 0; 
 }

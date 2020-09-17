@@ -6,8 +6,10 @@
 #include <netinet/in.h>
 #include <netdb.h> 
 
-void error(char *msg)
-{
+#define BUFFER_LEN 256  //Defines how long a message can be
+#define USER_LEN 100     //Defines how long a username can be
+
+void error(char *msg) {
     perror(msg);
     exit(0);
 }
@@ -17,29 +19,56 @@ int main(int argc, char *argv[])
     int sockfd, portno, n;
     struct sockaddr_in serv_addr;
     struct hostent *server;
-    char buffer[256];
-    if (argc < 3) {
-    fprintf(stderr,"usage %s hostname port\n", argv[0]);
-    exit(0);
+    char buffer[BUFFER_LEN];
+    char username[USER_LEN];
+    portno = 0;
+
+    if (argc < 2) {
+        fprintf(stderr,"usage %s hostname\n", argv[0]);
+        exit(0);
     }
-    portno = atoi(argv[2]);
+
+    while(portno == 0) {
+        printf("Enter a port # to listen to: ");
+        bzero(buffer, BUFFER_LEN);
+        fgets(buffer, BUFFER_LEN-1, stdin);
+        portno = atoi(buffer);
+        if(portno < 2000 || portno > 65535) {
+            portno = 0;
+            printf("Please enter a valid port # from 2000 to 65535\n");
+            fflush( stdout );
+        }
+    }
+
+    printf("Please enter a username: ");
+    fflush( stdout );
+    bzero(username, USER_LEN);
+    fgets(username, USER_LEN-1, stdin);
+
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0) 
+
+    if (sockfd < 0) {   
         error("ERROR opening socket");
+    }
+
     server = gethostbyname(argv[1]);
+
     if (server == NULL) {
         fprintf(stderr,"ERROR, no such host\n");
         exit(0);
     }
+
     bzero((char *) &serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     bcopy((char *)server->h_addr, 
         (char *)&serv_addr.sin_addr.s_addr,
         server->h_length);
     serv_addr.sin_port = htons(portno);
-    if (connect(sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr)) < 0) 
-        error("ERROR connecting");
 
+    if (connect(sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr)) < 0) {
+        error("ERROR connecting");
+    }
+    
     //Get user message
     printf("Please enter the message: ");
     bzero(buffer,256);
