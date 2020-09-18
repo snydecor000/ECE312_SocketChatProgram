@@ -9,9 +9,43 @@
 #define BUFFER_LEN 256  //Defines how long a message can be
 #define USER_LEN 100     //Defines how long a username can be
 
+char username[USER_LEN];
+
 void error(char *msg) {
     perror(msg);
     exit(0);
+}
+
+void * sendMessage(void * socket) {
+    int sockfd, ret;
+    char buffer[BUFFER_LEN];
+    sockfd = (int) socket;
+    int n;
+
+    bzero(buffer,BUFFER_LEN);//Clear Buffer
+    
+    while(strcmp(buffer,"exit") != 0) {
+        char message[BUFFER_LEN];
+        char userEnd[5];
+        strcpy(message,"<");
+        strcat(message,username);
+        strcpy(userEnd,">: ");
+        strcat(message,userEnd);
+
+        printf("<you>: ");
+        bzero(buffer,BUFFER_LEN);
+        fgets(buffer,BUFFER_LEN-1,stdin);
+
+        strcat(message,buffer);
+
+        n = write(sockfd,message,strlen(message));
+        
+        if (n < 0) 
+            error("ERROR writing to socket");
+    }
+
+    printf("Closing connection\n");
+    close(sockfd);
 }
 
 int main(int argc, char *argv[])
@@ -20,8 +54,9 @@ int main(int argc, char *argv[])
     struct sockaddr_in serv_addr;
     struct hostent *server;
     char buffer[BUFFER_LEN];
-    char username[USER_LEN];
     portno = 0;
+    pthread_t sendThread;
+    int ret;
 
     if (argc < 2) {
         fprintf(stderr,"usage %s hostname\n", argv[0]);
@@ -44,6 +79,7 @@ int main(int argc, char *argv[])
     fflush( stdout );
     bzero(username, USER_LEN);
     fgets(username, USER_LEN-1, stdin);
+    username[strlen(username)-1] = '\0';
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -68,11 +104,20 @@ int main(int argc, char *argv[])
     if (connect(sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr)) < 0) {
         error("ERROR connecting");
     }
-    
-    //Get user message
+
+        //creating a new thread for receiving messages from the client
+    if (ret = pthread_create(&sendThread, NULL, sendMessage, (void *) sockfd)) {
+        printf("ERROR: Return Code from pthread_create() is %d\n", ret);
+        error("ERROR creating thread");
+    }
+
+    while(1){
+
+    }
+    /*//Get user message
     printf("Please enter the message: ");
     bzero(buffer,256);
-    fgets(buffer,255,stdin);
+    fgets(buffer,sizeof(buffer),stdin);
     
     n = write(sockfd,buffer,strlen(buffer));
     if (n < 0) 
@@ -81,6 +126,6 @@ int main(int argc, char *argv[])
     n = read(sockfd,buffer,255);
     if (n < 0) 
         error("ERROR reading from socket");
-    printf("%s\n",buffer);
+    printf("%s\n",buffer);*/
     return 0;
 }
