@@ -24,10 +24,10 @@ void * sendMessage(void * socket) {
 
     bzero(buffer,BUFFER_LEN);//Clear Buffer
     
-    while(strcmp(buffer,"exit") != 0) {
+    while(strcmp(buffer,"exit\n") != 0) {
         char message[BUFFER_LEN];
         char userEnd[5];
-        strcpy(message,"<");
+        strcpy(message,"\n<");
         strcat(message,username);
         strcpy(userEnd,">: ");
         strcat(message,userEnd);
@@ -46,6 +46,36 @@ void * sendMessage(void * socket) {
 
     printf("Closing connection\n");
     close(sockfd);
+    exit(0);
+}
+
+void * receiveMessage(void * socket) {
+    int sockfd, ret;
+    char buffer[BUFFER_LEN];
+    sockfd = (int) socket;
+    int n;
+
+    bzero(buffer,BUFFER_LEN);//Clear Buffer
+    
+    while((n = read(sockfd,buffer,BUFFER_LEN-1)) > 0) { //The code waits for this.  Fill Buffer with the message
+        if (n < 0) {
+            error("ERROR reading from socket");
+        }
+        printf("%s",buffer);
+        fflush( stdout );
+        printf("<you>: ");
+        fflush( stdout );
+        bzero(buffer,BUFFER_LEN);//Clear Buffer
+    }  
+
+    if (n < 0) {
+        printf("Error receiving data!\n");
+    } else {
+        printf("Closing connection\n");
+        
+    }
+    close(sockfd);
+    exit(0);
 }
 
 int main(int argc, char *argv[])
@@ -56,6 +86,7 @@ int main(int argc, char *argv[])
     char buffer[BUFFER_LEN];
     portno = 0;
     pthread_t sendThread;
+    pthread_t readThread;
     int ret;
 
     if (argc < 2) {
@@ -105,8 +136,14 @@ int main(int argc, char *argv[])
         error("ERROR connecting");
     }
 
-        //creating a new thread for receiving messages from the client
+    //creating a new thread for receiving messages from the client
     if (ret = pthread_create(&sendThread, NULL, sendMessage, (void *) sockfd)) {
+        printf("ERROR: Return Code from pthread_create() is %d\n", ret);
+        error("ERROR creating thread");
+    }
+
+    //creating a new thread for receiving messages from the client
+    if (ret = pthread_create(&readThread, NULL, receiveMessage, (void *) sockfd)) {
         printf("ERROR: Return Code from pthread_create() is %d\n", ret);
         error("ERROR creating thread");
     }

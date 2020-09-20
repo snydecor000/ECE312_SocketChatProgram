@@ -9,40 +9,82 @@
 #define BUFFER_LEN 256  //Defines how long a message can be
 #define USER_LEN 100     //Defines how long a username can be
 
+char username[USER_LEN];
+
 void error(char *msg) {
     perror(msg);
     exit(1);
 }
 
-void * receiveMessage(void * socket) {
+void* receiveMessage(void* socket) {
     int sockfd, ret;
     char buffer[BUFFER_LEN];
-    sockfd = (int) socket;
+    sockfd = (int)socket;
     int n;
 
-    bzero(buffer,BUFFER_LEN);//Clear Buffer
-    
-    while((n = read(sockfd,buffer,BUFFER_LEN-1)) > 0) { //The code waits for this.  Fill Buffer with the message
+    bzero(buffer, BUFFER_LEN);//Clear Buffer
+
+    while ((n = read(sockfd, buffer, BUFFER_LEN - 1)) > 0) { //The code waits for this.  Fill Buffer with the message
         if (n < 0) {
             error("ERROR reading from socket");
         }
-        printf("%s",buffer);
-        bzero(buffer,BUFFER_LEN);//Clear Buffer
-    }  
-    if (n < 0) 
-        printf("Error receiving data!\n");
+        printf("%s", buffer);
+        fflush(stdout);
+        printf("<you>: ");
+        fflush(stdout);
+        bzero(buffer, BUFFER_LEN);//Clear Buffer
+    }
+    
+    if (n < 0)
+         printf("Error receiving data!\n");
     else
-        printf("Closing connection\n");
+        printf("Closing connection\n"); 
+        
     close(sockfd);
+    exit(0);
+}
+
+void* sendMessage(void* socket) {
+    int sockfd, ret;
+    char buffer[BUFFER_LEN];
+    sockfd = (int)socket;
+    int n;
+
+    bzero(buffer, BUFFER_LEN);//Clear Buffer
+
+    while (strcmp(buffer, "exit\n") != 0) {
+        char message[BUFFER_LEN];
+        char userEnd[5];
+        strcpy(message, "\n<");
+        strcat(message, username);
+        strcpy(userEnd, ">: ");
+        strcat(message, userEnd);
+
+        printf("<you>: ");
+        bzero(buffer, BUFFER_LEN);
+        fgets(buffer, BUFFER_LEN - 1, stdin);
+
+        strcat(message, buffer);
+
+        n = write(sockfd, message, strlen(message));
+
+        if (n < 0)
+            error("ERROR writing to socket");
+    }
+
+    printf("Closing connection\n");
+    close(sockfd);
+    exit(0);
 }
 
 int main(int argc, char *argv[]) {
     int sockfd, newsockfd, portno, clilen;
     char buffer[BUFFER_LEN];
-    char username[USER_LEN];
+    // char username[USER_LEN];
     struct sockaddr_in serv_addr, cli_addr;
     int n;
     pthread_t readThread;
+    pthread_t sendThread;
     int ret;
 
     portno = 0;
@@ -64,6 +106,7 @@ int main(int argc, char *argv[]) {
     fflush( stdout );
     bzero(username, USER_LEN);
     fgets(username, USER_LEN-1, stdin);
+    username[strlen(username) - 1] = '\0';
     printf("Waiting for connection...\n");
     fflush( stdout );
 
@@ -99,6 +142,12 @@ int main(int argc, char *argv[]) {
         printf("ERROR: Return Code from pthread_create() is %d\n", ret);
         error("ERROR creating thread");
     }
+
+    if (ret = pthread_create(&sendThread, NULL, sendMessage, (void*)newsockfd)) {
+        printf("ERROR: Return Code from pthread_create() is %d\n", ret);
+        error("ERROR creating thread");
+    }
+
 
     while(1){
 
