@@ -10,14 +10,16 @@
 #define BUFFER_LEN 256  //Defines how long a message can be
 #define USER_LEN 100     //Defines how long a username can be
 
-char username[USER_LEN];
-char otherUsername[USER_LEN];
+char username[USER_LEN]; // stores the username associated with this computer
+char otherUsername[USER_LEN]; //stores the username associated with the client's computer
 
 void error(char *msg) {
     perror(msg);
     exit(1);
 }
 
+// A method, established in a thread, that receives messages from the client. It loops forever and allows constant reception of messages, sending them when enter \
+// is pressed.  If exit is typed and sent, the method ends and the connection is closed. 
 void* receiveMessage(void* socket) {
     int sockfd, ret;
     char buffer[BUFFER_LEN];
@@ -52,6 +54,8 @@ void* receiveMessage(void* socket) {
     exit(0);
 }
 
+// A method, established in a thread, that sends messages to the client. It loops forever and allows constant input of messages, sending them when enter is pressed. 
+// If exit is typed and sent, the method ends and the connection is closed. 
 void* sendMessage(void* socket) {
     int sockfd, ret;
     char buffer[BUFFER_LEN];
@@ -153,12 +157,13 @@ int main(int argc, char *argv[]) {
         error("ERROR creating thread");
     }
 
+    //creating a new thread for sending messages to the client
     if (ret = pthread_create(&sendThread, NULL, sendMessage, (void*)newsockfd)) {
         printf("ERROR: Return Code from pthread_create() is %d\n", ret);
         error("ERROR creating thread");
     }
 
-
+    //have this thread loop forever and wait for send/receive threads to be established
     while(1){
 
     }
