@@ -1,5 +1,9 @@
-//Cory Snyder and Tristen Foisy
-
+// Cory Snyder and Tristen Foisy
+// 9/22/2020
+//
+// ECE312 Project 1: Socket Chat Program
+//
+//
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -9,6 +13,7 @@
 #define BUFFER_LEN 256  //Defines how long a message can be
 #define USER_LEN 100     //Defines how long a username can be
 
+//Global Variables 
 char username[USER_LEN];
 char otherUsername[USER_LEN];
 
@@ -147,9 +152,9 @@ int main(int argc, char *argv[])
     if (n < 0)
         error("ERROR reading from socket");
 
-    printf("Connection established with %d (%s)\n",serv_addr.sin_addr.s_addr,otherUsername);
+    printf("Connection established with %s (%s)\n", argv[1], otherUsername);
 
-    //creating a new thread for receiving messages from the client
+    //creating a new thread for sending messages to the client
     if (ret = pthread_create(&sendThread, NULL, sendMessage, (void *) sockfd)) {
         printf("ERROR: Return Code from pthread_create() is %d\n", ret);
         error("ERROR creating thread");
@@ -161,21 +166,9 @@ int main(int argc, char *argv[])
         error("ERROR creating thread");
     }
 
+    //
     while(1){
 
     }
-    /*//Get user message
-    printf("Please enter the message: ");
-    bzero(buffer,256);
-    fgets(buffer,sizeof(buffer),stdin);
-    
-    n = write(sockfd,buffer,strlen(buffer));
-    if (n < 0) 
-        error("ERROR writing to socket");
-    bzero(buffer,256);
-    n = read(sockfd,buffer,255);
-    if (n < 0) 
-        error("ERROR reading from socket");
-    printf("%s\n",buffer);*/
     return 0;
 }
