@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <pthread.h>
+#include <arpa/inet.h>
 
 #define BUFFER_LEN 256  //Defines how long a message can be
 #define USER_LEN 100     //Defines how long a username can be
@@ -144,7 +145,7 @@ int main(int argc, char *argv[]) {
     if (n < 0)
         error("ERROR reading from socket");
     
-    printf("Connection established with %d (%s)\n",cli_addr.sin_addr.s_addr,otherUsername);
+    printf("Connection established with %s (%s)\n",inet_ntoa(cli_addr.sin_addr),otherUsername);
 
     //creating a new thread for receiving messages from the client
     if (ret = pthread_create(&readThread, NULL, receiveMessage, (void *) newsockfd)) {
