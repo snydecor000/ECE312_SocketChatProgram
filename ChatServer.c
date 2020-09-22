@@ -1,5 +1,15 @@
-//Cory Snyder and Tristen Foisy
-
+// Cory Snyder and Tristen Foisy
+// 9/22/2020
+//
+// ECE312 Project 1: Socket Chat Program
+// ChatServer.c
+//
+// ChatServer is designed to take a port number as an input in order to 
+// create a socket for clients to attach to. It allows the concurrent 
+// sending and receiving of messages which is implemented via two seperate 
+// pthreads. 
+// 
+// 
 #include <stdio.h>
 #include <sys/types.h> 
 #include <sys/socket.h>
@@ -34,7 +44,8 @@ void* receiveMessage(void* socket) {
 
     bzero(buffer, BUFFER_LEN);//Clear Buffer
 
-    while ((n = read(sockfd, buffer, BUFFER_LEN - 1)) > 0) { //The code waits for this.  Fill Buffer with the message
+    //while there are no read errors, keep waiting to receive messages
+    while ((n = read(sockfd, buffer, BUFFER_LEN - 1)) > 0) {
         if (n < 0) {
             error("ERROR reading from socket");
         }
@@ -64,6 +75,7 @@ void* sendMessage(void* socket) {
 
     bzero(buffer, BUFFER_LEN);//Clear Buffer
 
+    //while the message being sent isn't "exit," keep sending messages
     while (strcmp(buffer, "exit\n") != 0) {
 
         printf("<you>: ");
@@ -107,7 +119,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    //Get this host's username
+    //Get this host's username from the user
     printf("Please enter a username: ");
     fflush( stdout );
     bzero(username, USER_LEN);
@@ -149,6 +161,7 @@ int main(int argc, char *argv[]) {
     if (n < 0)
         error("ERROR reading from socket");
     
+    //
     printf("Connection established with %s (%s)\n",inet_ntoa(cli_addr.sin_addr),otherUsername);
 
     //creating a new thread for receiving messages from the client

@@ -3,7 +3,14 @@
 //
 // ECE312 Project 1: Socket Chat Program
 //
-//
+// ChatClient is designed to take a host IP addresss and port 
+// number as inputs in order to connect to a chat server. It allows,
+// the concurrent sending and receiving of messages which is implemented
+// via two seperate pthreads. 
+// 
+// 
+
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -22,7 +29,9 @@ void error(char *msg) {
     exit(0);
 }
 
+//A method established in a new thread that sends messages to the server
 void * sendMessage(void * socket) {
+    //Define local variables
     int sockfd, ret;
     char buffer[BUFFER_LEN];
     sockfd = (int) socket;
@@ -30,6 +39,7 @@ void * sendMessage(void * socket) {
 
     bzero(buffer,BUFFER_LEN);//Clear Buffer
     
+    //while the message being sent isn't "exit," keep sending messages
     while(strcmp(buffer,"exit\n") != 0) {
 
         printf("<you>: ");
@@ -43,17 +53,23 @@ void * sendMessage(void * socket) {
             error("ERROR writing to socket");
     }
 
+    //Close the connection if "exit is sent"
     printf("Closing connection\n");
     close(sockfd);
     exit(0);
 }
 
+//A method to recieve messages from the server
 void * receiveMessage(void * socket) {
+    //Define local variables
     int sockfd, ret;
     char buffer[BUFFER_LEN];
     char fromUser[USER_LEN+4];
     sockfd = (int) socket;
     int n;
+
+    //Prepare the username text before incoming messages:
+    // '<username>: '
     char userEnd[] = ">: ";
     strcpy(fromUser, "<");
     strcat(fromUser, otherUsername);
@@ -61,7 +77,7 @@ void * receiveMessage(void * socket) {
 
     bzero(buffer,BUFFER_LEN);//Clear Buffer
     
-    while((n = read(sockfd,buffer,BUFFER_LEN-1)) > 0) { //The code waits for this.  Fill Buffer with the message
+    while((n = read(sockfd,buffer,BUFFER_LEN-1)) > 0) {
         if (n < 0) {
             error("ERROR reading from socket");
         }
@@ -166,7 +182,7 @@ int main(int argc, char *argv[])
         error("ERROR creating thread");
     }
 
-    //
+    //Have this thread loop forever and wait for the send/recieve threads to terminate the program
     while(1){
 
     }
