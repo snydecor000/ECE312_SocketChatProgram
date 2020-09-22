@@ -4,13 +4,21 @@
 // ECE312 Project 1: Socket Chat Program
 // ChatClient.c
 //
+// Usage: ./client ServerIP
+//
 // ChatClient is designed to take a host IP addresss and port 
 // number as inputs in order to connect to a chat server. It allows,
 // the concurrent sending and receiving of messages which is implemented
 // via two seperate pthreads. 
 // 
-// 
-
+// The general flow of the program is as follows:
+// 1. Asks user for the port number 
+// 2. Asks user for their username
+// 3. Creates a socket and attempts to connect to the server
+// 4. Exchanges usernames with the server
+// 5. Prints confirmation of the connection
+// 6. Starts two threads, one for sending messages, one for receiving
+// 7. Waits for "exit" to be sent or received before terminating
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -30,8 +38,9 @@ void error(char *msg) {
     exit(0);
 }
 
-// A method, established in a thread, that sends messages to the client. It loops forever and allows constant input of messages, sending them when enter is pressed. 
-// If exit is typed and sent, the method ends and the connection is closed. 
+// A method, established in a thread, that sends messages to the server. It loops 
+// forever and allows constant input of messages, sending them when enter is pressed. 
+// If "exit" is typed and sent, the method ends and the connection is closed. 
 void * sendMessage(void * socket) {
     //Define local variables
     int sockfd, ret;
@@ -55,14 +64,14 @@ void * sendMessage(void * socket) {
             error("ERROR writing to socket");
     }
 
-    //Close the connection if "exit is sent"
+    //Close the connection if "exit" is sent
     printf("Closing connection\n");
     close(sockfd);
     exit(0);
 }
 
-// A method, established in a thread, that receives messages from the client. It loops forever and allows constant reception of messages, sending them when enter \
-// is pressed.  If exit is typed and sent, the method ends and the connection is closed.
+// A method, established in a thread, that receives messages from the client. It loops 
+// forever and allows constant reception of messages. 
 void * receiveMessage(void * socket) {
     //Define local variables
     int sockfd, ret;
@@ -113,6 +122,7 @@ int main(int argc, char *argv[]){
     pthread_t readThread;
     int ret;
 
+    //Error and Exit if the user didn't have the server IP as an argument
     if (argc < 2) {
         fprintf(stderr,"usage %s hostname\n", argv[0]);
         exit(0);
@@ -145,7 +155,7 @@ int main(int argc, char *argv[]){
         error("ERROR opening socket");
     }
     
-    //gets the server
+    //gets the server IP from the arguments
     server = gethostbyname(argv[1]);
 
     if (server == NULL) {
@@ -176,15 +186,16 @@ int main(int argc, char *argv[]){
     if (n < 0)
         error("ERROR reading from socket");
 
+    //Print confirmation of the connection
     printf("Connection established with %s (%s)\n", argv[1], otherUsername);
 
-    //creating a new thread for sending messages to the client
+    //creating a new thread for sending messages to the server
     if (ret = pthread_create(&sendThread, NULL, sendMessage, (void *) sockfd)) {
         printf("ERROR: Return Code from pthread_create() is %d\n", ret);
         error("ERROR creating thread");
     }
 
-    //creating a new thread for receiving messages from the client
+    //creating a new thread for receiving messages from the server
     if (ret = pthread_create(&readThread, NULL, receiveMessage, (void *) sockfd)) {
         printf("ERROR: Return Code from pthread_create() is %d\n", ret);
         error("ERROR creating thread");

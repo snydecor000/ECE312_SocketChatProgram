@@ -9,7 +9,16 @@
 // sending and receiving of messages which is implemented via two seperate 
 // pthreads. 
 // 
-// 
+// The general flow of the program is as follows:
+// 1. Asks user for the port number 
+// 2. Asks user for their username
+// 3. Creates a socket and binds with it
+// 4. Listens and waits to accept a client connection
+// 5. Exchanges usernames with the client
+// 6. Prints confirmation of the connection
+// 7. Starts two threads, one for sending messages, one for receiving
+// 8. Waits for "exit" to be sent or received before terminating
+
 #include <stdio.h>
 #include <sys/types.h> 
 #include <sys/socket.h>
@@ -28,8 +37,8 @@ void error(char *msg) {
     exit(1);
 }
 
-// A method, established in a thread, that receives messages from the client. It loops forever and allows constant reception of messages, sending them when enter \
-// is pressed.  If exit is typed and sent, the method ends and the connection is closed. 
+// A method, established in a thread, that receives messages from the client. It loops 
+// forever and allows constant reception of messages. 
 void* receiveMessage(void* socket) {
     // Define local variables
     int sockfd, ret;
@@ -39,6 +48,7 @@ void* receiveMessage(void* socket) {
     int n;
 
     // builds a String that displays the other user's username
+    // '<username>: '
     char userEnd[] = ">: ";
     strcpy(fromUser, "<");
     strcat(fromUser, otherUsername);
@@ -67,8 +77,9 @@ void* receiveMessage(void* socket) {
     exit(0);
 }
 
-// A method, established in a thread, that sends messages to the client. It loops forever and allows constant input of messages, sending them when enter is pressed. 
-// If exit is typed and sent, the method ends and the connection is closed. 
+// A method, established in a thread, that sends messages to the client. It loops 
+// forever and allows constant input of messages, sending them when enter is pressed. 
+// If "exit" is typed and sent, the method ends and the connection is closed. 
 void* sendMessage(void* socket) {
     // Define local variables
     int sockfd, ret;
@@ -78,7 +89,7 @@ void* sendMessage(void* socket) {
 
     bzero(buffer, BUFFER_LEN);//Clear Buffer
 
-    //while the message being sent isn't "exit," keep sending messages
+    //while the message being sent isn't "exit," keep the ability to send messages
     while (strcmp(buffer, "exit\n") != 0) {
 
         printf("<you>: ");
@@ -92,7 +103,7 @@ void* sendMessage(void* socket) {
             error("ERROR writing to socket");
     }
 
-    //Close the connection if "exit is sent"
+    //Close the connection if "exit" is sent
     printf("Closing connection\n");
     close(sockfd);
     exit(0);
@@ -145,14 +156,14 @@ int main(int argc, char *argv[]) {
     serv_addr.sin_port = htons(portno);
     serv_addr.sin_addr.s_addr = INADDR_ANY;
 
-    //Attempt to bind with the socket, wait here until it does connect
+    //Attempt to bind with the socket
     if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
         error("ERROR on binding");
     
     //Listen for the client
     listen(sockfd,1);
 
-    //Accept the connection to the client
+    //Accept the connection to the client, wait here till connection
     newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);//The code waits for this to happen
     if (newsockfd < 0)
         error("ERROR on accept");
@@ -167,7 +178,7 @@ int main(int argc, char *argv[]) {
     if (n < 0)
         error("ERROR reading from socket");
     
-
+    //Print confirmation of the connection
     printf("Connection established with %s (%s)\n",inet_ntoa(cli_addr.sin_addr),otherUsername);
 
     //creating a new thread for receiving messages from the client
@@ -182,8 +193,9 @@ int main(int argc, char *argv[]) {
         error("ERROR creating thread");
     }
 
-    //have this thread loop forever and wait for send/receive threads to be established
+    //Have this thread loop forever and wait for the send/recieve threads to terminate the program
     while(1){
 
     }
+    return 0;
 }
