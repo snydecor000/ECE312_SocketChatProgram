@@ -31,12 +31,14 @@ void error(char *msg) {
 // A method, established in a thread, that receives messages from the client. It loops forever and allows constant reception of messages, sending them when enter \
 // is pressed.  If exit is typed and sent, the method ends and the connection is closed. 
 void* receiveMessage(void* socket) {
+    // Define local variables
     int sockfd, ret;
     char buffer[BUFFER_LEN];
     char fromUser[USER_LEN+4];
     sockfd = (int)socket;
     int n;
 
+    // builds a String that displays the other user's username
     char userEnd[] = ">: ";
     strcpy(fromUser, "<");
     strcat(fromUser, otherUsername);
@@ -68,6 +70,7 @@ void* receiveMessage(void* socket) {
 // A method, established in a thread, that sends messages to the client. It loops forever and allows constant input of messages, sending them when enter is pressed. 
 // If exit is typed and sent, the method ends and the connection is closed. 
 void* sendMessage(void* socket) {
+    // Define local variables
     int sockfd, ret;
     char buffer[BUFFER_LEN];
     sockfd = (int)socket;
@@ -89,12 +92,14 @@ void* sendMessage(void* socket) {
             error("ERROR writing to socket");
     }
 
+    //Close the connection if "exit is sent"
     printf("Closing connection\n");
     close(sockfd);
     exit(0);
 }
 
 int main(int argc, char *argv[]) {
+    // Declare local variables
     int sockfd, newsockfd, portno, clilen;
     char buffer[BUFFER_LEN];
     struct sockaddr_in serv_addr, cli_addr;
@@ -112,6 +117,7 @@ int main(int argc, char *argv[]) {
         bzero(buffer, BUFFER_LEN);// Clears Buffer
         fgets(buffer, BUFFER_LEN-1, stdin);
         portno = atoi(buffer);
+        // check validity of port specified
         if(portno < 2000 || portno > 65535) {
             portno = 0;
             printf("Please enter a valid port # from 2000 to 65535\n");
@@ -161,7 +167,7 @@ int main(int argc, char *argv[]) {
     if (n < 0)
         error("ERROR reading from socket");
     
-    //
+
     printf("Connection established with %s (%s)\n",inet_ntoa(cli_addr.sin_addr),otherUsername);
 
     //creating a new thread for receiving messages from the client

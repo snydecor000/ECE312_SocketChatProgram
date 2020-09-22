@@ -2,6 +2,7 @@
 // 9/22/2020
 //
 // ECE312 Project 1: Socket Chat Program
+// ChatClient.c
 //
 // ChatClient is designed to take a host IP addresss and port 
 // number as inputs in order to connect to a chat server. It allows,
@@ -29,7 +30,8 @@ void error(char *msg) {
     exit(0);
 }
 
-//A method established in a new thread that sends messages to the server
+// A method, established in a thread, that sends messages to the client. It loops forever and allows constant input of messages, sending them when enter is pressed. 
+// If exit is typed and sent, the method ends and the connection is closed. 
 void * sendMessage(void * socket) {
     //Define local variables
     int sockfd, ret;
@@ -39,7 +41,7 @@ void * sendMessage(void * socket) {
 
     bzero(buffer,BUFFER_LEN);//Clear Buffer
     
-    //while the message being sent isn't "exit," keep sending messages
+    //while the message being sent isn't "exit," keep the ability to send messages
     while(strcmp(buffer,"exit\n") != 0) {
 
         printf("<you>: ");
@@ -59,7 +61,8 @@ void * sendMessage(void * socket) {
     exit(0);
 }
 
-//A method to recieve messages from the server
+// A method, established in a thread, that receives messages from the client. It loops forever and allows constant reception of messages, sending them when enter \
+// is pressed.  If exit is typed and sent, the method ends and the connection is closed.
 void * receiveMessage(void * socket) {
     //Define local variables
     int sockfd, ret;
@@ -77,6 +80,7 @@ void * receiveMessage(void * socket) {
 
     bzero(buffer,BUFFER_LEN);//Clear Buffer
     
+    //while there are no read errors, keep waiting to receive messages
     while((n = read(sockfd,buffer,BUFFER_LEN-1)) > 0) {
         if (n < 0) {
             error("ERROR reading from socket");
@@ -98,8 +102,8 @@ void * receiveMessage(void * socket) {
     exit(0);
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]){
+    // Declare local variables
     int sockfd, portno, n;
     struct sockaddr_in serv_addr;
     struct hostent *server;
@@ -120,6 +124,7 @@ int main(int argc, char *argv[])
         bzero(buffer, BUFFER_LEN);
         fgets(buffer, BUFFER_LEN-1, stdin);
         portno = atoi(buffer);
+        // check validity of port specified
         if(portno < 2000 || portno > 65535) {
             portno = 0;
             printf("Please enter a valid port # from 2000 to 65535\n");
@@ -127,19 +132,20 @@ int main(int argc, char *argv[])
         }
     }
 
-    //Get this host's username
+    //Get this host's username from the user
     printf("Please enter a username: ");
     fflush( stdout );
     bzero(username, USER_LEN);
     fgets(username, USER_LEN-1, stdin);
     username[strlen(username)-1] = '\0';
 
+    //Attempt to open the socket
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
-
     if (sockfd < 0) {   
         error("ERROR opening socket");
     }
-
+    
+    //gets the server
     server = gethostbyname(argv[1]);
 
     if (server == NULL) {
@@ -147,6 +153,7 @@ int main(int argc, char *argv[])
         exit(0);
     }
 
+    //Does some bookkeeping to store the server address and make a connection
     bzero((char *) &serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     bcopy((char *)server->h_addr, 
@@ -154,6 +161,7 @@ int main(int argc, char *argv[])
         server->h_length);
     serv_addr.sin_port = htons(portno);
 
+    //Attempt to connect to the server via the socket
     if (connect(sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr)) < 0) {
         error("ERROR connecting");
     }
